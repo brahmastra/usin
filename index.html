@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>У-Син: баланс пяти элементов</title>
+        <link rel="stylesheet" href="style.css" />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script src="app.js"></script>
+    </head>
+    <body>
+        <header class="app-header">
+            <h1>У-Син</h1>
+            <p class="subtitle">баланс пяти элементов</p>
+        </header>
+
+        <main id="app">
+            <!-- ЭКРАН 1: Приветствие -->
+            <section id="screen-home" class="screen active">
+                <div class="card">
+                    <h2>Опросник по пяти элементам</h2>
+                    <p>
+                        Ответьте на 50 вопросов, оценивая каждое утверждение по
+                        последним 1–2 месяцам:
+                    </p>
+                    <ul class="scale-list">
+                        <li><b>0</b> — никогда / не про меня</li>
+                        <li><b>1</b> — редко</li>
+                        <li><b>2</b> — иногда</li>
+                        <li><b>3</b> — часто</li>
+                        <li><b>4</b> — почти всегда</li>
+                    </ul>
+                    <p class="note">
+                        Это инструмент самонаблюдения, а не медицинская
+                        диагностика. При выраженных симптомах обратитесь к
+                        врачу.
+                    </p>
+                    <div class="btn-row">
+                        <button class="btn primary" onclick="startQuiz()">
+                            Пройти опрос
+                        </button>
+                        <button
+                            class="btn ghost"
+                            onclick="showScreen('history')"
+                        >
+                            История
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ЭКРАН 2: Опросник -->
+            <section id="screen-quiz" class="screen">
+                <div class="progress-wrap">
+                    <div class="progress-bar">
+                        <div id="progress-fill"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">0 / 50</div>
+                </div>
+
+                <div id="quiz-blocks"></div>
+
+                <div class="btn-row sticky-bottom">
+                    <button class="btn ghost" onclick="showScreen('home')">
+                        Назад
+                    </button>
+                    <button class="btn primary" onclick="submitQuiz()">
+                        Показать результат
+                    </button>
+                </div>
+            </section>
+
+            <!-- ЭКРАН 3: Результат -->
+            <section id="screen-result" class="screen">
+                <div class="card">
+                    <h2>Ваш результат</h2>
+                    <div class="chart-wrap">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <div id="result-table"></div>
+                    <div id="result-pattern" class="pattern-box"></div>
+                    <div id="result-recommendations"></div>
+                    <div class="btn-row">
+                        <button class="btn primary" onclick="saveResult()">
+                            Сохранить в историю
+                        </button>
+                        <button class="btn ghost" onclick="showScreen('home')">
+                            На главную
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ЭКРАН 4: История -->
+            <section id="screen-history" class="screen">
+                <div class="card">
+                    <h2>История прохождений</h2>
+                    <div id="history-list"></div>
+                    <div class="btn-row">
+                        <button class="btn ghost" onclick="showScreen('home')">
+                            На главную
+                        </button>
+                        <button class="btn danger" onclick="clearHistory()">
+                            Очистить историю
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ЭКРАН 5: Детали из истории -->
+            <section id="screen-detail" class="screen">
+                <div class="card">
+                    <h2>Прохождение от <span id="detail-date"></span></h2>
+                    <div id="detail-content"></div>
+                    <div class="btn-row">
+                        <button
+                            class="btn ghost"
+                            onclick="showScreen('history')"
+                        >
+                            К истории
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>У-Син · локальное хранение · без сервера</p>
+        </footer>
+
+        <script src="app.js"></script>
+    </body>
+</html>
