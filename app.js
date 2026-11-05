@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    У-Син: баланс пяти элементов
    Данные, логика, localStorage, Chart.js
    ============================================================ */
@@ -167,21 +167,36 @@ const RECOMMENDATIONS = {
 
 /* ---------- 4. КЛАССИЧЕСКИЕ ПАТТЕРНЫ ДИСБАЛАНСА ---------- */
 
+/* ---------- 4. КЛАССИЧЕСКИЕ ПАТТЕРНЫ ДИСБАЛАНСА ---------- */
+
 function detectPattern(percents) {
-  const sorted = [...ORDER].sort((a, b) => percents[b] - percents[a]);
-  const high = sorted[0];
-  const low = sorted[sorted.length - 1];
-  const highName = ELEMENTS[high].name;
-  const lowName = ELEMENTS[low].name;
+  // Все элементы с максимальным процентом (может быть несколько)
+  const maxVal = Math.max(...ORDER.map(k => percents[k]));
+  const minVal = Math.min(...ORDER.map(k => percents[k]));
+  const highKeys = ORDER.filter(k => percents[k] === maxVal);
+  const lowKeys  = ORDER.filter(k => percents[k] === minVal);
 
-  // Порог: если разница мала, дисбаланс слабый
-  const diff = percents[high] - percents[low];
+  const highNames = highKeys.map(k => ELEMENTS[k].name).join(', ');
+  const lowNames  = lowKeys.map(k => ELEMENTS[k].name).join(', ');
 
+  // Если max === min — все элементы равны
+  if (maxVal === minVal) {
+    return {
+      high: highKeys[0],
+      low: lowKeys[0],
+      highKeys,
+      lowKeys,
+      text: `Все пять элементов имеют одинаковый балл (${maxVal}%). Полный баланс — редкий и хороший результат.`
+    };
+  }
+
+  const diff = maxVal - minVal;
   let text = '';
+
   if (diff < 15) {
-    text = `Все пять элементов относительно сбалансированы. Наибольший балл у элемента <b>${highName}</b> (${percents[high]}%), наименьший — у <b>${lowName}</b> (${percents[low]}%). Разница небольшая, выраженного дисбаланса нет.`;
+    text = `Все пять элементов относительно сбалансированы. Наибольший балл: <b>${highNames}</b> (${maxVal}%), наименьший: <b>${lowNames}</b> (${minVal}%). Разница небольшая, выраженного дисбаланса нет.`;
   } else {
-    // Известные паттерны
+    // Ищем известные паттерны: перебираем ВСЕ комбинации high × low
     const patterns = [
       { h: 'wood',  l: 'earth', txt: 'Избыток Дерева «атакует» Землю: стресс и напряжение бьют по пищеварению. Типично при тревоге и проблемах с ЖКТ.' },
       { h: 'water', l: 'fire',  txt: 'Вода «гасит» Огонь: страхи и упадок сил подавляют радость и сон.' },
@@ -191,19 +206,36 @@ function detectPattern(percents) {
       { h: 'fire',  l: 'water', txt: 'Огонь истощает Воду: перевозбуждение и тревога расходуют жизненную силу.' }
     ];
 
-    const found = patterns.find(p => p.h === high && p.l === low);
-    if (found) {
-      text = `<b>Паттерн:</b> ${found.txt}`;
+    const found = [];
+    highKeys.forEach(h => {
+      lowKeys.forEach(l => {
+        const p = patterns.find(pt => pt.h === h && pt.l === l);
+        if (p) found.push(p.txt);
+      });
+    });
+
+    // Убираем дубли текстов (если несколько пар дали одинаковый паттерн)
+    const uniqueFound = [...new Set(found)];
+
+    if (uniqueFound.length > 0) {
+      text = '<b>Паттерн:</b> ' + uniqueFound.join('<br><br><b>Паттерн:</b> ');
     } else {
-      text = `Наиболее выражен элемент <b>${highName}</b> (${percents[high]}%), наиболее ослаблен — <b>${lowName}</b> (${percents[low]}%). Обратите внимание на поддержку обоих элементов.`;
+      text = `Наиболее выражены: <b>${highNames}</b> (${maxVal}%), наиболее ослаблены: <b>${lowNames}</b> (${minVal}%). Обратите внимание на поддержку этих элементов.`;
     }
 
     // Дополнительная заметка о слабой Воде
-    if (low === 'water') {
+    if (lowKeys.includes('water')) {
       text += ' <br><br><b>Важно:</b> слабая Вода — базовый дефицит жизненной силы. Поддержка Почек и достаточный отдых — приоритет.';
     }
   }
-  return { high, low, text };
+
+  return {
+    high: highKeys[0],
+    low: lowKeys[0],
+    highKeys,
+    lowKeys,
+    text
+  };
 }
 
 /* ---------- 5. СОСТОЯНИЕ И ХРАНИЛИЩЕ ---------- */
@@ -364,12 +396,12 @@ function renderResult(result) {
 
   // Рекомендации — показываем для высокого и низкого
   const recContainer = document.getElementById('result-recommendations');
-  const recKeys = [...new Set([pattern.high, pattern.low])];
+  const recKeys = [...new Set([...pattern.highKeys, ...pattern.lowKeys])];
   let recHtml = '<h3 style="margin-top:18px;margin-bottom:10px;">Рекомендации</h3>';
 
   recKeys.forEach(k => {
     const r = RECOMMENDATIONS[k];
-    const isHigh = k === pattern.high;
+    const isHigh = pattern.highKeys.includes(k);
     recHtml += `<div class="rec-item" style="border-left:4px solid ${ELEMENTS[k].color};">
       <h4>${r.title} <small style="color:#6b6b6b;font-weight:normal;">(${isHigh ? 'избыток' : 'недостаток'} внимания)</small></h4>
       <p style="font-size:13px;color:#6b6b6b;">${r.when}</p>
