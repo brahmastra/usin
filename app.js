@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    У-Син: баланс пяти элементов
    Данные, логика, localStorage, Chart.js
    ============================================================ */
@@ -167,8 +167,6 @@ const RECOMMENDATIONS = {
 
 /* ---------- 4. КЛАССИЧЕСКИЕ ПАТТЕРНЫ ДИСБАЛАНСА ---------- */
 
-/* ---------- 4. КЛАССИЧЕСКИЕ ПАТТЕРНЫ ДИСБАЛАНСА ---------- */
-
 function detectPattern(percents) {
   // Все элементы с максимальным процентом (может быть несколько)
   const maxVal = Math.max(...ORDER.map(k => percents[k]));
@@ -246,6 +244,7 @@ const LS_DRAFT   = 'usin_draft';
 let draft = {};        // { wood: [0..4 x10], ... }
 let lastResult = null; // { date, scores, percents }
 let radarChart = null;
+let detailChart = null;
 
 /* ---------- 6. НАВИГАЦИЯ ---------- */
 
@@ -395,20 +394,7 @@ function renderResult(result) {
   document.getElementById('result-pattern').innerHTML = pattern.text;
 
   // Рекомендации — показываем для высокого и низкого
-  const recContainer = document.getElementById('result-recommendations');
-  const recKeys = [...new Set([...pattern.highKeys, ...pattern.lowKeys])];
-  let recHtml = '<h3 style="margin-top:18px;margin-bottom:10px;">Рекомендации</h3>';
-
-  recKeys.forEach(k => {
-    const r = RECOMMENDATIONS[k];
-    const isHigh = pattern.highKeys.includes(k);
-    recHtml += `<div class="rec-item" style="border-left:4px solid ${ELEMENTS[k].color};">
-      <h4>${r.title} <small style="color:#6b6b6b;font-weight:normal;">(${isHigh ? 'избыток' : 'недостаток'} внимания)</small></h4>
-      <p style="font-size:13px;color:#6b6b6b;">${r.when}</p>
-      <ul>${r.items.map(i => `<li>${i}</li>`).join('')}</ul>
-    </div>`;
-  });
-  recContainer.innerHTML = recHtml;
+  document.getElementById('result-recommendations').innerHTML = buildRecommendationsHtml(percents);
 
   // Радар-диаграмма
   const ctx = document.getElementById('radarChart').getContext('2d');
@@ -449,7 +435,27 @@ function renderResult(result) {
   });
 }
 
-/* ---------- 9. СОХРАНЕНИЕ И ИСТОРИЯ ---------- */
+/* ---------- 9. РЕКОМЕНДАЦИИ (ОБЩИЕ ДЛЯ РЕЗУЛЬТАТА И ИСТОРИИ) ---------- */
+
+function buildRecommendationsHtml(percents) {
+  const pattern = detectPattern(percents);
+  const recKeys = [...new Set([...pattern.highKeys, ...pattern.lowKeys])];
+  let html = '<h3 style="margin-top:18px;margin-bottom:10px;">Рекомендации</h3>';
+
+  recKeys.forEach(k => {
+    const r = RECOMMENDATIONS[k];
+    const isHigh = pattern.highKeys.includes(k);
+    html += `<div class="rec-item" style="border-left:4px solid ${ELEMENTS[k].color};">
+      <h4>${r.title} <small style="color:#6b6b6b;font-weight:normal;">(${isHigh ? 'избыток' : 'недостаток'} внимания)</small></h4>
+      <p style="font-size:13px;color:#6b6b6b;">${r.when}</p>
+      <ul>${r.items.map(i => `<li>${i}</li>`).join('')}</ul>
+    </div>`;
+  });
+
+  return html;
+}
+
+/* ---------- 10. СОХРАНЕНИЕ И ИСТОРИЯ ---------- */
 
 function saveResult() {
   if (!lastResult) return;
@@ -526,13 +532,16 @@ function showDetail(idx) {
     </div>`;
   }).join('');
   html += `<div class="pattern-box">${pattern.text}</div>`;
+  html += `<div id="detail-recommendations">${buildRecommendationsHtml(h.percents)}</div>`;
 
   document.getElementById('detail-content').innerHTML = html;
   showScreen('detail');
 
   // Диаграмма деталей
   const ctx = document.getElementById('detailChart').getContext('2d');
-  new Chart(ctx, {
+  if (detailChart) detailChart.destroy();
+
+  detailChart = new Chart(ctx, {
     type: 'radar',
     data: {
       labels: ORDER.map(k => ELEMENTS[k].name),
@@ -570,7 +579,7 @@ function clearHistory() {
   renderHistory();
 }
 
-/* ---------- 10. СТАРТ ---------- */
+/* ---------- 11. СТАРТ ---------- */
 
 document.addEventListener('DOMContentLoaded', () => {
   showScreen('home');
